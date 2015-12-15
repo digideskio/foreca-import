@@ -8,6 +8,7 @@ dotenv.load()
 
 // Helper functions
 var env = (key, fallback = '') => (typeof process.env[key] !== 'undefined' ? process.env[key] : fallback)
+var log = (msg, ...args) => { console.log('[' + new Date() + '] ' + msg, ...args) }
 var getConfiguration = (key) => {
 	var prefix = key.replace(/_URL$/, '')
 	var url = env(key)
@@ -38,6 +39,8 @@ var client = influx({
 	database: env('INFLUXDB_DATABASE', 'foreca'),
 })
 var insert = (items) => {
+	var ids = []
+
 	items = _.map(items, (item) => {
 		// Determine time column
 		item.time = (new Date(item.time)).getTime() || Date.now() // Milliseconds
@@ -48,6 +51,8 @@ var insert = (items) => {
 		delete item.id
 		delete item.type
 
+		ids.push(`${id} (${type})`)
+
 		// Add import timestamp
 		item.importTime = Date.now()
 
@@ -56,7 +61,9 @@ var insert = (items) => {
 	})
 
 	client.writePoints(env('INFLUXDB_SERIE', 'Foreca'), items, { precision: 'ns' }, (err, res) => {
-		if (err) return console.error('Error inserting records: ', err)
+		if (err) return log('Error inserting records: ', err)
+
+		log('Inserted %d points for %s.', items.length, _.unique(ids).join(', '))
 	})
 }
 
@@ -64,10 +71,10 @@ var insert = (items) => {
 _.chain(Object.keys(process.env)).filter((key) => key.match(/_URL$/)).each((key) => {
 	var { err, url, columns, type } = getConfiguration(key)
 
-	if (err) return console.err('Couldn\'t determine configuration for %s: %s', key, err)
+	if (err) return log('Couldn\'t determine configuration for %s: %s', key, err)
 
 	request(url, (err, res) => {
-		if (err) return console.error('Couldn\'t import %s: %s', obscureUrl(url), err)
+		if (err) return log('Couldn\'t import %s: %s', obscureUrl(url), err)
 
 		_.chain(res.body.split('\n'))
 			.map(s.trim)
@@ -84,7 +91,7 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/_URL$/)).each((key)
 					})
 					.value()
 			})
-			//.tap(console.log)
+			//.tap(log)
 			.each(insert)
 	})
 })

@@ -51,9 +51,9 @@ var insert = (items) => {
 		item.time *= 1000000 // Convert to nanoseconds
 
 		// Add offset as nanoseconds
-		// This negligable offset prevents overwriting other data points,
-		// and therefore allows duplicate entries
-		item.time += offset
+		// This negligable offset prevents overwriting other data points, and therefore allows duplicate entries.
+		// Disallow negative offsets. This occurs when a measurment is added for the current day.
+		item.time += Math.max(offset, 0)
 
 		// Convert time to string
 		// This solves a bug in InfluxDB (related to https://goo.gl/5SrKKn)

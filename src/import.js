@@ -45,9 +45,19 @@ var insert = (items) => {
 	var ids = []
 
 	items = _.map(items, (item) => {
-		// Determine time column
+		// Determine timestamp
 		item.time = (new Date(item.time)).getTime() || Date.now() // Milliseconds
-		item.time += '000000' // Convert to string and nanoseconds (may still have bug https://goo.gl/5SrKKn)
+		var offset = Math.round((item.time - now) / 1000) // Remaining seconds
+		item.time *= 1000000 // Convert to nanoseconds
+
+		// Add offset as nanoseconds
+		// This negligable offset prevents overwriting other data points,
+		// and therefore allows duplicate entries
+		item.time += offset
+
+		// Convert time to string
+		// This solves a bug in InfluxDB (related to https://goo.gl/5SrKKn)
+		item.time = item.time.toString()
 
 		// Use ID and type as tags
 		var { id, type } = item

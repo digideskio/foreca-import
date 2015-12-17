@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import dotenv from 'dotenv'
 import _ from 'underscore'
 import s from 'underscore.string'
@@ -28,6 +30,7 @@ var parseTypes = (values) => _.map(values, (value) => {
 	if (value.indexOf('.') !== -1) return parseFloat(value)
 	return parseInt(value)
 })
+var now = Date.now()
 
 // Client and insert function
 var client = influx({
@@ -54,7 +57,7 @@ var insert = (items) => {
 		ids.push(`${id} (${type})`)
 
 		// Add import timestamp
-		item.importTime = Date.now()
+		item.importTime = now
 
 		// Format as [values, tags]
 		return [item, { id, type }]
@@ -75,6 +78,8 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/_URL$/)).each((key)
 
 	request(url, (err, res) => {
 		if (err) return log('Couldn\'t import %s: %s', obscureUrl(url), err)
+
+		fs.writeFile(path.resolve(__dirname, '..', 'archive', `${now}.${type}.txt`), res.body)
 
 		_.chain(res.body.split('\n'))
 			.map(s.trim)

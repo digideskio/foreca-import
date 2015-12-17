@@ -47,7 +47,7 @@ var insert = (items) => {
 	items = _.map(items, (item) => {
 		// Determine timestamp
 		item.time = (new Date(item.time)).getTime() || Date.now() // Milliseconds
-		var offset = Math.max(Math.round((item.time - now) / 1000), 0) // Remaining seconds
+		var offset = Math.round((item.time - now) / 1000) // Remaining seconds
 
 		// Convert to nanosecond string
 		// This solves a bug in InfluxDB (related to https://goo.gl/5SrKKn)
@@ -58,10 +58,13 @@ var insert = (items) => {
 		//   And therefore allows duplicate entries.
 		// Disallow negative offsets.
 		//   This occurs when a measurement is added for the current day.
+		//   Fix negative offset: place it between 864000 (10 days * 24 * 3600) and 999999.
 		// Adding the offset does not work, only the hundreths of nanoseconds are kept.
 		//   This has to do with the JavaScript Number type floating point precision.
 		//   So append it as a string instead.
-		item.time = item.time.substr(0, item.time.length - offset.toString().length) + offset
+		var nanos = offset
+		if (nanos < 1) nanos = 86400 + Math.abs(offset)
+		item.time = item.time.substr(0, item.time.length - nanos.toString().length) + nanos
 
 		// Use ID and type as tags
 		var { id, type } = item

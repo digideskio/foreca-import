@@ -6,8 +6,10 @@
   "main": "src/import.js",
   "scripts": {
     "start": "babel-node src/import.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/"
   },
+  "pre-commit": "lint",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kukua/foreca-import.git"
@@ -23,8 +25,13 @@
     "babel-preset-es2015": "^6.3.13",
     "dotenv": "^1.2.0",
     "influx": "^4.0.1",
+    "node-couchdb": "^0.4.0",
     "request": "^2.67.0",
     "underscore": "^1.8.3",
     "underscore.string": "^3.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^1.10.3",
+    "pre-commit": "^1.1.2"
   }
 }

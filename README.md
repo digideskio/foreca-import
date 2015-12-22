@@ -11,7 +11,7 @@ npm install
 cp .env.sample .env
 # > Edit .env
 
-npm start
+docker-compose up -d
 
 # Add cronjob
 sudo su -

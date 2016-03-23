@@ -1,0 +1,1 @@
+3 * * * * ubuntu cd /home/ubuntu/data/foreca-import && docker-compose up forecaimport

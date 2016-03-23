@@ -1,6 +1,8 @@
 import:
     build: .
-    env_file: .env
+    env_file:
+        - .env
+        - concava.env
     volumes:
         - ./src/import.js:/data/src/import.js:ro
         - ./archive/:/data/archive/

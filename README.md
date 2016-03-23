@@ -1,22 +1,17 @@
-# Foreca Import
+# Foreca forecast import
 
-> Import Foreca weather forecasts into InfluxDB.
+> Import Foreca weather forecasts into MySQL database.
 
-## Installation
+## Setup
 
 ```bash
 git clone https://github.com/kukua/foreca-import.git
 cd foreca-import
-npm install
 cp .env.sample .env
 # > Edit .env
+ln -s ../concava-setup-mysql-mqtt/.env concava.env
 
-docker-compose up -d
+docker-compose up -d couchdb
 
-# Add cronjob
-sudo su -
-echo -e '#!/bin/bash\n\n/data/foreca-import/run.sh' > /etc/cron.hourly/foreca-import
-chmod +x /etc/cron.hourly/foreca-import
-/etc/cron.hourly/foreca-import # Test cronjob script, should output lines with 'npm info'
-exit # Leave root
+sudo cp ./cronjob /etc/cron.d/foreca-import
 ```

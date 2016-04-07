@@ -1,7 +1,7 @@
 {
   "name": "foreca-import",
   "version": "0.2.0",
-  "description": "Import Foreca weather forecasts into InfluxDB.",
+  "description": "Import Foreca weather forecasts into MySQL.",
   "private": true,
   "main": "src/import.js",
   "scripts": {

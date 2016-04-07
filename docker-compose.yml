@@ -6,10 +6,5 @@ import:
     volumes:
         - ./src/import.js:/data/src/import.js:ro
         - ./archive/:/data/archive/
-    links:
-        - couchdb
-couchdb:
-    image: frodenas/couchdb:1.6
-    env_file: .env
-    ports:
-        - "5984:5984"
+    external_links:
+        - concavasetupmysqlmqtt_mariadb_1:mariadb

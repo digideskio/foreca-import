@@ -1,14 +1,9 @@
 import fs from 'fs'
-//import util from 'util'
 import path from 'path'
-import dotenv from 'dotenv'
 import _ from 'underscore'
 import s from 'underscore.string'
 import request from 'request'
-import influx from 'influx'
-import couchdb from 'node-couchdb'
-
-dotenv.load()
+import mysql from 'mysql'
 
 // Helper functions
 var env = (key, fallback = '') => (typeof process.env[key] !== 'undefined' ? process.env[key] : fallback)
@@ -35,63 +30,48 @@ var parseTypes = (values) => _.map(values, (value) => {
 })
 var now = Date.now()
 
-// Clients and insert function
-var influxClient = influx({
-	host: env('INFLUXDB_HOST', 'localhost'),
-	port: env('INFLUXDB_PORT', 8086),
-	protocol: env('INFLUXDB_PROTOCOL', 'http'),
-	username: env('INFLUXDB_USERNAME', 'root'),
-	password: env('INFLUXDB_PASSWORD', 'root'),
-	database: env('INFLUXDB_DATABASE', 'foreca'),
+// Exit after 1 minute
+setTimeout(() => {
+	log('Exiting..')
+	process.exit(0)
+}, 1000 * 60)
+
+// Client and insert function
+var client = mysql.createConnection({
+	host: 'mariadb',
+	user: env('MYSQL_USER'),
+	password: env('MYSQL_PASSWORD'),
+	database: env('MYSQL_FORECAST_DATABASE')
 })
-var couchClient = new couchdb(env('COUCHDB_HOST', 'localhost'), env('COUCHDB_PORT', 5984))
-var couchDbName = env('COUCHDB_DBNAME', 'foreca')
 var insert = (items) => {
-	var ids = []
+	var table = `${items[0].type}_${items[0].id}`
+	var processed = 0
+	var failed = 0
 
-	items = _.map(items, (item) => {
-		// Determine id, type, and time
-		var { id, type } = item
-		var time = new Date(item.time)
+	log('Processing %d items for %s..', items.length, table)
 
-		// Validate timestamp
-		if (isNaN(time.getTime())) {
-			return log('Invalid time for point %s (%s): ', id, type, item)
-		}
+	_.each(items, (item) => {
+		if (item.type === 'hourly') item.timestamp += 'Z'
+		var timestamp = new Date(item.timestamp).getTime() / 1000
+		delete item.timestamp
 
-		item.time = time
-
-		// Add import timestamp
-		item.importTime = now
-
-		// Archive
-		couchClient.insert(couchDbName, item, (err) => {
-			if (err) return log('Error archiving point %s (%s): %s', id, type, err)
-			// Do nothing
-		})
-
-		// Format timestamp
-		item.time = item.time.getTime() // Milliseconds
-
-		// > Convert to nanosecond string
-		//   This solves a bug in InfluxDB (related to https://goo.gl/5SrKKn)
-		item.time += '000000'
-
-		// Use ID and type as tags
-		delete item.id
 		delete item.type
+		delete item.id
 
-		ids.push(`${id} (${type})`)
+		var query = 'REPLACE INTO ?? SET ?, `timestamp` = FROM_UNIXTIME(?)'
 
-		// Format as [values, tags]
-		return [item, { id, type }]
-	})
+		client.query(query, [table, item, timestamp], (err, result) => {
+			processed += 1
 
-	// Insert or overwrite points
-	influxClient.writePoints(env('INFLUXDB_SERIE', 'Foreca'), items, { precision: 'ns' }, (err) => {
-		if (err) return log('Error inserting records: ', err)
+			if (err) {
+				log('Error:', err)
+				failed += 1
+			}
 
-		log('Inserted %d points for %s.', items.length, _.unique(ids).join(', '))
+			if (processed === items.length) {
+				log('Done processing %s (%d errors).', table, failed)
+			}
+		})
 	})
 }
 
@@ -105,7 +85,7 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/^[A-Z]+_FEED_URL$/)
 		if (err) return log('Couldn\'t import %s: %s', obscureUrl(url), err)
 
 		// Archive raw input
-		fs.writeFile(path.resolve(__dirname, '..', 'archive', `${now}.${type}.txt`), res.body)
+		fs.writeFile(path.resolve(__dirname, '..', 'archive', `${now}.${type}.csv`), res.body)
 
 		/**
 		 * Format:

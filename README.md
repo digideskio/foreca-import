@@ -8,10 +8,9 @@
 git clone https://github.com/kukua/foreca-import.git
 cd foreca-import
 cp .env.sample .env
+chmod 600 .env
 # > Edit .env
 ln -s ../concava-setup-mysql-mqtt/.env concava.env
-
-docker-compose up -d couchdb
 
 sudo cp ./cronjob /etc/cron.d/foreca-import
 ```

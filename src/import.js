@@ -41,12 +41,10 @@ var client = mysql.createConnection({
 	password: env('MYSQL_PASSWORD'),
 	database: env('MYSQL_FORECAST_DATABASE')
 })
-var insert = (items, cb) => {
+var insert = (items, done) => {
 	var table = `${items[0].type}_${items[0].id}`
-	var processed = 0
 	var failed = 0
-
-	var p = parallel().timeout(timeout)
+	var p = parallel()
 
 	log('Processing %d items for %s..', items.length, table)
 
@@ -62,15 +60,9 @@ var insert = (items, cb) => {
 			var query = 'REPLACE INTO ?? SET ?, `timestamp` = FROM_UNIXTIME(?)'
 
 			client.query(query, [table, item, timestamp], (err) => {
-				processed += 1
-
 				if (err) {
 					log('Error:', err)
 					failed += 1
-				}
-
-				if (processed === items.length) {
-					log('Done processing %s (%d errors).', table, failed)
 				}
 
 				done()
@@ -78,7 +70,10 @@ var insert = (items, cb) => {
 		})
 	})
 
-	p.done(cb)
+	p.done(() => {
+		log('Done processing %s (%d failures).', table, failed)
+		done()
+	})
 }
 
 // Fetch import data, parse it, and process it
@@ -102,6 +97,8 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/^[A-Z]+_FEED_URL$/)
 			 * <id station 1>#<val 1>;<val 2>;<val 3>#<val 1>;<val 2>;<val 3>(<#...>)\n
 			 * <id station 2>#<val 1>;<val 2>;<val 3>#<val 1>;<val 2>;<val 3>(<#...>)
 			 */
+			var p = parallel()
+
 			_.chain(res.body.split('\n'))
 				.map(s.trim)
 				.filter()
@@ -119,8 +116,10 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/^[A-Z]+_FEED_URL$/)
 				})
 				//.tap(util.inspect)
 				.each((items) => {
-					insert(items, done)
+					p.add((done) => { insert(items, done) })
 				})
+
+			p.done(done)
 		})
 	})
 })

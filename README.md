@@ -13,4 +13,5 @@ chmod 600 .env
 ln -s ../concava-setup-mysql-mqtt/.env concava.env
 
 sudo cp ./cronjob /etc/cron.d/foreca-import
+sudo service cron reload
 ```

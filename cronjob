@@ -1,1 +1,1 @@
-3 * * * * ubuntu cd /home/ubuntu/data/foreca-import && docker-compose up import
+3 * * * * ubuntu cd /home/ubuntu/data/foreca-import && /usr/local/bin/docker-compose up import

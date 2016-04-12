@@ -4,7 +4,6 @@ import:
         - .env
         - concava.env
     volumes:
-        - ./src/import.js:/data/src/import.js:ro
         - ./archive/:/data/archive/
     external_links:
         - concavasetupmysqlmqtt_mariadb_1:mariadb

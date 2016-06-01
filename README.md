@@ -15,3 +15,9 @@ ln -s ../concava-setup-mysql-mqtt/.env concava.env
 sudo cp ./cronjob /etc/cron.d/foreca-import
 sudo service cron reload
 ```
+
+## License
+
+This software is licensed under the [MIT license](https://github.com/kukua/foreca-import/blob/master/LICENSE).
+
+© 2016 Kukua BV

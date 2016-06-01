@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/kukua/foreca-import.git"
   },
-  "author": "Maurits van Mastrigt <maurits@kukua.cc>",
+  "author": "Kukua Team <dev@kukua.cc>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kukua/foreca-import/issues"

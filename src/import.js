@@ -105,7 +105,6 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/^[A-Z]+_FEED_URL$/)
 				.map((line) => line.split('#'))
 				.map((values) => {
 					var id = values.shift()
-					console.log(id)
 
 					return _.chain(values)
 						.map((item) => _.object(columns, parseTypes(item.split(/;\s*/))))

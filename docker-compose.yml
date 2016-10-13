@@ -5,5 +5,5 @@ import:
         - concava.env
     volumes:
         - ./archive/:/data/archive/
-#    external_links:
-#        - concavasetupmysqlmqtt_mariadb_1:mariadb
+    external_links:
+        - concavasetupmysqlmqtt_mariadb_1:mariadb

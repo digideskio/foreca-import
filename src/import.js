@@ -36,30 +36,30 @@ var now = Date.now()
 
 // Client and insert function
 var client = mysql.createConnection({
-	host: 'mariadb',
+	host: env('MYSQL_HOST', 'mariadb'),
 	user: env('MYSQL_USER'),
 	password: env('MYSQL_PASSWORD'),
 	database: env('MYSQL_FORECAST_DATABASE')
 })
 var insert = (items, done) => {
-	var table = `${items[0].type}_${items[0].id}`
+	var type = items[0].type
 	var failed = 0
 	var p = parallel()
 
-	log('Processing %d items for %s..', items.length, table)
+	log('Processing %d items for %s..', items.length, type)
 
 	_.each(items, (item) => {
 		p.add((done) => {
 			if (item.type === 'hourly') item.timestamp += 'Z'
 			var timestamp = new Date(item.timestamp).getTime() / 1000
+			var type = item.type
+
 			delete item.timestamp
-
 			delete item.type
-			delete item.id
 
-			var query = 'REPLACE INTO ?? SET ?, `timestamp` = FROM_UNIXTIME(?)'
+			var query = 'REPLACE INTO ?? SET ?, `date` = FROM_UNIXTIME(?), created_at = NOW()'
 
-			client.query(query, [table, item, timestamp], (err) => {
+			client.query(query, [type, item, timestamp], (err) => {
 				if (err) {
 					log('Error:', err)
 					failed += 1
@@ -71,7 +71,7 @@ var insert = (items, done) => {
 	})
 
 	p.done(() => {
-		log('Done processing %s (%d failures).', table, failed)
+		log('Done processing %s (%d failures).', type, failed)
 		done()
 	})
 }
@@ -100,11 +100,12 @@ _.chain(Object.keys(process.env)).filter((key) => key.match(/^[A-Z]+_FEED_URL$/)
 			var p = parallel()
 
 			_.chain(res.body.split('\n'))
-				.map(s.trim)
+				//.map(s.trim)
 				.filter()
 				.map((line) => line.split('#'))
 				.map((values) => {
 					var id = values.shift()
+					console.log(id)
 
 					return _.chain(values)
 						.map((item) => _.object(columns, parseTypes(item.split(/;\s*/))))
